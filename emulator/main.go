@@ -21,7 +21,9 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -37,6 +39,7 @@ var (
 	speakersFlag = flag.String("speakers", "Living Room,Kitchen", "comma-separated list of virtual speaker names")
 	basePort     = flag.Int("port", 1400, "starting HTTP port for the first speaker")
 	verify       = flag.Bool("verify", false, "fetch the media URL on Play to verify accessibility")
+	play         = flag.Bool("play", false, "download and play the TTS audio through Mac speakers using afplay")
 )
 
 func main() {
@@ -197,7 +200,9 @@ func handleSOAPAction(w http.ResponseWriter, r *http.Request, spk *VirtualSpeake
 
 	case "Play":
 		log.Printf("[%s] Play (URI: %s)", spk.Name, spk.MediaURI)
-		if *verify && spk.MediaURI != "" {
+		if *play && spk.MediaURI != "" {
+			go playAudio(spk.Name, spk.MediaURI)
+		} else if *verify && spk.MediaURI != "" {
 			go verifyMediaURL(spk.Name, spk.MediaURI)
 		}
 
@@ -233,6 +238,45 @@ func extractTagValue(body, tag string) string {
 	value = strings.ReplaceAll(value, "&gt;", ">")
 	value = strings.ReplaceAll(value, "&quot;", `"`)
 	return value
+}
+
+func playAudio(speakerName, mediaURL string) {
+	client := http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(mediaURL)
+	if err != nil {
+		log.Printf("[%s] PLAY FAILED - download error: %v", speakerName, err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Determine file extension from URL
+	ext := filepath.Ext(mediaURL)
+	if ext == "" {
+		ext = ".m4a"
+	}
+
+	tmpFile, err := os.CreateTemp("", "sonos-emulator-*"+ext)
+	if err != nil {
+		log.Printf("[%s] PLAY FAILED - temp file error: %v", speakerName, err)
+		return
+	}
+	tmpPath := tmpFile.Name()
+	defer os.Remove(tmpPath)
+
+	if _, err := io.Copy(tmpFile, resp.Body); err != nil {
+		tmpFile.Close()
+		log.Printf("[%s] PLAY FAILED - write error: %v", speakerName, err)
+		return
+	}
+	tmpFile.Close()
+
+	log.Printf("[%s] Playing audio: %s", speakerName, mediaURL)
+	cmd := exec.Command("afplay", tmpPath)
+	if err := cmd.Run(); err != nil {
+		log.Printf("[%s] PLAY FAILED - afplay error: %v", speakerName, err)
+		return
+	}
+	log.Printf("[%s] Playback finished", speakerName)
 }
 
 func verifyMediaURL(speakerName, url string) {
