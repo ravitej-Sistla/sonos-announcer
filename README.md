@@ -43,6 +43,16 @@ On startup the service will:
 3. Start API server on port **9000**
 4. Start Telegram bot listener (if token is set)
 
+## Swagger UI
+
+Interactive API documentation is available at:
+
+```
+http://localhost:9000/swagger/
+```
+
+The OpenAPI spec is served at `http://localhost:9000/swagger.yaml`.
+
 ## HTTP API
 
 ### List speakers

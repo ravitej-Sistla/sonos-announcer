@@ -1,0 +1,103 @@
+openapi: 3.0.3
+info:
+  title: Sonos Announcement Gateway API
+  description: REST API for discovering Sonos speakers and playing text-to-speech announcements.
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:9000
+    description: Local API server
+
+paths:
+  /speakers:
+    get:
+      summary: List discovered Sonos speakers
+      operationId: listSpeakers
+      responses:
+        "200":
+          description: List of Sonos speakers on the network
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpeakersResponse"
+              example:
+                speakers:
+                  - name: Living Room
+                    id: livingroom
+                  - name: Kitchen
+                    id: kitchen
+
+  /speak:
+    post:
+      summary: Send a text-to-speech announcement to Sonos speakers
+      operationId: speak
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SpeakRequest"
+            example:
+              text: Dinner is ready
+              target: kitchen
+      responses:
+        "200":
+          description: Announcement played successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusResponse"
+              example:
+                status: ok
+        "400":
+          description: Invalid request (missing text or bad JSON)
+        "500":
+          description: TTS generation or Sonos playback failed
+
+components:
+  schemas:
+    Speaker:
+      type: object
+      required:
+        - name
+        - id
+      properties:
+        name:
+          type: string
+          description: Display name of the Sonos speaker (room name)
+          example: Living Room
+        id:
+          type: string
+          description: Normalized speaker ID (lowercase, no spaces)
+          example: livingroom
+
+    SpeakersResponse:
+      type: object
+      required:
+        - speakers
+      properties:
+        speakers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Speaker"
+
+    SpeakRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: The announcement text to convert to speech
+          example: Dinner is ready
+        target:
+          type: string
+          description: Speaker ID to play on, or "all" for all speakers. Defaults to "all" if omitted.
+          example: kitchen
+
+    StatusResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok

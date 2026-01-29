@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -18,6 +19,9 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
+
+//go:embed swagger.yaml
+var swaggerSpec []byte
 
 // SonosSpeaker represents a discovered Sonos speaker.
 type SonosSpeaker struct {
@@ -336,11 +340,44 @@ func startAPIServer() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/speakers", handleSpeakers)
 	mux.HandleFunc("/speak", handleSpeak)
+	mux.HandleFunc("/swagger.yaml", handleSwaggerSpec)
+	mux.HandleFunc("/swagger/", handleSwaggerUI)
 
 	log.Println("Starting API server on :9000")
+	log.Println("Swagger UI available at http://localhost:9000/swagger/")
 	if err := http.ListenAndServe(":9000", mux); err != nil {
 		log.Fatalf("API server error: %v", err)
 	}
+}
+
+func handleSwaggerSpec(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/yaml")
+	w.Write(swaggerSpec)
+}
+
+func handleSwaggerUI(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sonos Gateway - Swagger UI</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+  <style>html { box-sizing: border-box; } body { margin: 0; }</style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({
+      url: "/swagger.yaml",
+      dom_id: "#swagger-ui",
+      presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+      layout: "BaseLayout"
+    });
+  </script>
+</body>
+</html>`)
 }
 
 func handleSpeakers(w http.ResponseWriter, r *http.Request) {
