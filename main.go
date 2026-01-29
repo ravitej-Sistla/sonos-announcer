@@ -356,8 +356,9 @@ func startAPIServer(ip string) {
 }
 
 func handleSwaggerSpec(w http.ResponseWriter, r *http.Request) {
+	spec := strings.ReplaceAll(string(swaggerSpec), "http://localhost:9000", "http://"+localIP+":9000")
 	w.Header().Set("Content-Type", "application/yaml")
-	w.Write(swaggerSpec)
+	w.Write([]byte(spec))
 }
 
 func handleSwaggerUI(w http.ResponseWriter, r *http.Request) {
