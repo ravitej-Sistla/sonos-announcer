@@ -23,6 +23,7 @@ Set the following environment variables:
 |---|---|---|
 | `TELEGRAM_BOT_TOKEN` | No | Telegram bot token from [@BotFather](https://t.me/BotFather). If not set, the Telegram bot is disabled but the HTTP API still works. |
 | `ALLOWED_TELEGRAM_USER` | No | Telegram user ID to restrict bot access. If not set, the bot responds to all users. |
+| `LOCAL_IP` | No | Override the auto-detected local IP address. Useful when the machine has multiple network interfaces. |
 
 ### Finding your Telegram user ID
 
