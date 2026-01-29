@@ -45,8 +45,8 @@ func main() {
 	speakers = discoverSonos()
 	logSpeakers()
 
-	go startFileServer()
-	go startAPIServer()
+	go startFileServer(localIP)
+	go startAPIServer(localIP)
 
 	log.Println("Sonos Gateway Ready")
 	startTelegramBot()
@@ -55,6 +55,9 @@ func main() {
 // --------------- Network helpers ---------------
 
 func getLocalIP() string {
+	if ip := os.Getenv("LOCAL_IP"); ip != "" {
+		return ip
+	}
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
 		log.Fatal("Failed to detect local IP:", err)
@@ -313,9 +316,10 @@ func xmlEscape(s string) string {
 
 // --------------- File Server (port 8080) ---------------
 
-func startFileServer() {
-	log.Println("Starting TTS file server on :8080")
-	if err := http.ListenAndServe(":8080", http.FileServer(http.Dir("."))); err != nil {
+func startFileServer(ip string) {
+	addr := ip + ":8080"
+	log.Printf("Starting TTS file server on %s", addr)
+	if err := http.ListenAndServe(addr, http.FileServer(http.Dir("."))); err != nil {
 		log.Fatalf("File server error: %v", err)
 	}
 }
@@ -336,16 +340,17 @@ type speakRequest struct {
 	Target string `json:"target"`
 }
 
-func startAPIServer() {
+func startAPIServer(ip string) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/speakers", handleSpeakers)
 	mux.HandleFunc("/speak", handleSpeak)
 	mux.HandleFunc("/swagger.yaml", handleSwaggerSpec)
 	mux.HandleFunc("/swagger/", handleSwaggerUI)
 
-	log.Println("Starting API server on :9000")
-	log.Println("Swagger UI available at http://localhost:9000/swagger/")
-	if err := http.ListenAndServe(":9000", mux); err != nil {
+	addr := ip + ":9000"
+	log.Printf("Starting API server on %s", addr)
+	log.Printf("Swagger UI available at http://%s:9000/swagger/", ip)
+	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("API server error: %v", err)
 	}
 }
