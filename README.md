@@ -118,13 +118,14 @@ go build -o sonos-emulator .
 | `-speakers` | `"Living Room,Kitchen"` | Comma-separated list of virtual speaker names |
 | `-port` | `1400` | Starting HTTP port (increments per speaker) |
 | `-verify` | `false` | Fetch the media URL on Play to verify it is accessible |
+| `-play` | `false` | Download and play the TTS audio through Mac speakers using `afplay` |
 
 ### End-to-end test
 
 ```bash
 # Terminal 1: Start the emulator
 cd emulator
-./sonos-emulator -speakers "Living Room,Kitchen,Bedroom" -verify
+./sonos-emulator -speakers "Living Room,Kitchen,Bedroom" -play
 
 # Terminal 2: Start the gateway
 ./sonos-gateway
