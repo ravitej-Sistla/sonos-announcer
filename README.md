@@ -12,7 +12,7 @@ A macOS-based Go service that works as a voice announcement gateway for Sonos sp
 
 ```bash
 go mod tidy
-go build -o sonos-gateway .
+CGO_ENABLED=0 go build -o sonos-gateway .
 ```
 
 ## Configuration
@@ -109,7 +109,7 @@ A lightweight Sonos speaker emulator is included in `emulator/` for testing with
 
 ```bash
 cd emulator
-go build -o sonos-emulator .
+CGO_ENABLED=0 go build -o sonos-emulator .
 ```
 
 ### Emulator flags
