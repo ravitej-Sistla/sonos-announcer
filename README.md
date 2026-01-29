@@ -99,3 +99,45 @@ Send a message to the bot:
 
 - `Dinner is ready` — plays on **all** speakers
 - `kitchen: Dinner is ready` — plays only on the **kitchen** speaker
+
+## Testing with the Sonos Emulator
+
+A lightweight Sonos speaker emulator is included in `emulator/` for testing without real hardware. It simulates SSDP discovery, UPnP device descriptions, and AVTransport SOAP control.
+
+### Build the emulator
+
+```bash
+cd emulator
+go build -o sonos-emulator .
+```
+
+### Emulator flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `-speakers` | `"Living Room,Kitchen"` | Comma-separated list of virtual speaker names |
+| `-port` | `1400` | Starting HTTP port (increments per speaker) |
+| `-verify` | `false` | Fetch the media URL on Play to verify it is accessible |
+
+### End-to-end test
+
+```bash
+# Terminal 1: Start the emulator
+cd emulator
+./sonos-emulator -speakers "Living Room,Kitchen,Bedroom" -verify
+
+# Terminal 2: Start the gateway
+./sonos-gateway
+
+# Terminal 3: Test
+curl http://localhost:9000/speakers
+curl -X POST http://localhost:9000/speak \
+  -H 'Content-Type: application/json' \
+  -d '{"text":"Hello","target":"kitchen"}'
+```
+
+The emulator logs all SOAP actions it receives, so you can verify the gateway sent the correct commands.
+
+### Official Sonos Simulator
+
+For more comprehensive testing, Sonos provides an official simulator at https://developer.sonos.com/tools/developer-tools/sonos-simulator/ (requires a Sonos developer account and Node.js).
